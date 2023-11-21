@@ -1,0 +1,136 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2709
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 Quick and Dirty Methods for ABB Communication Module\
+\
+METHODS:\
+\
+set_units(linear, angular) : \
+	Allows the user to set the units of the input for the robot.\
+	\
+	linear (str) : Choice of millimeters, meters, or inches\
+	angular (str) : Choice of degrees or radians\
+\
+\
+set_cartesian(pose):\
+	Executes a linear move from the current position to the position indicated by pose.\
+\
+	pose (cartesian position) : [[X, Y, Z], [q1,q2,q3,q4]] : the new position the robot is moving too.\
+		X, Y, and Z are the unit locations within the workObject and q1-q4 describe the 		orientation of the tool\
+\
+set_joints(joints):\
+	directly sets the joint positions of the robot.\
+\
+	joints (array) : [1,2,3,4,5,6] : an array with 6 positions where joints[0] represents the degree value of 	joint 1 (the base), and joints[5] represents the degree value of joint 6 (the tool face).\
+\
+get_cartesian():\
+	returns an array containing the current position and orientation of the tool within the work object.\
+\
+	RETURNS: a \'93cartesian position\'94 (see \'93set_cartesian\'94) containing the current position of the tool.\
+\
+get_joints():\
+	Returns an array containing the current degree values of the joints.\
+\
+	RETURNS: an array with 6 positions, relating to the degree rotation of each of the 6 axis\'92\
+\
+get_external_axis():\
+	NOT NEEDED FOR OUR PROJECT. Returns the position of an external axis.\
+\
+get_robotinfo():\
+	Returns a string containing information such as the robot\'92s model number, RobotWare versions, and 	other similar info.\
+\
+set_tool(tool):\
+	Allows the user to define a tool center-point. Defining tools allows for more precise movement.\
+\
+	tool (TCP data): [[X, Y, Z], [q1,q2,q3,q4]] : Very similar to a cartesian position. Essentially a position 	from the frame of reference of the tool plate, with X Y Z and orientation positions saved.\
+\
+	NOTE: Though I do not see it here, tool data also usually includes its weight in kilograms and 	information to indicate the location of the tool\'92s center of mass. This allows the ABB software to take 	these factors into consideration when making moves while keeping set speeds.\
+\
+load_json_tool(file_obj):\
+	(UNSURE?) Looks to be another way to load tool data using a JSON format.\
+\
+get_tool():\
+	Returns the data for the currently set tool.\
+\
+	RETURNS: TCP data of currently active tool. (See \'93set_tool\'94)\
+\
+set_workobject(work_obj):\
+	Allows the user to set the current workObject data for the ABB Arm.\
+	WorkObjects are like frames of reference, they allow the user to define a specific coordinate systems 	for a surface or object that is independent of rotation or actual position in the world.\
+\
+	work_obj (WorkOBJData) : [[X, Y, Z], [q1,q2,q3,q4]] : Very similar to cartesian position. X, Y, and Z 	refer to the position in space of the origin of the work object. Q1-q4 refer to the orientation relative to 	the world object\
+\
+set_speed(speed):\
+	Allows the user to set the speed of the robot.\
+\
+	speed (array) : [LSpeed, RSpeed, ExtLSpeed, ExtRSpeed] : Speed variables corresponding to linear 	tool speed (mm/s), rotational tool speed (degrees/s), external axis speed (mm/s), external axis 	rotational speed (degrees/s)\
+\
+set_zone(zone_key, point_motion, manual_zone):\
+	Allows the user to set the zone of the robot. Zone refers to the amount of tolerance, in terms of 	distance to a point, the robot has when considering its moves. Better explained in the Functions and 	DataTypes PDF.\
+\
+	zone_key (str) : Refers to a set of preconfigured zone data values. (z0, z1, z5, z15, z20, z30, z50, 	z100, z200)\
+\
+	point_motion (bool) : Refers specifically to \'93fine\'94 point movements. I.E. Robot moves to the exact 	point position of a variable before moving to the next one.\
+\
+	manual_zone (array) : [pzone_tcp, pzone_ori, zone_ori] :\
+        		pzone_tcp: mm, radius from goal where robot tool centerpoint \
+                   		is not rigidly constrained\
+        		pzone_ori: mm, radius from goal where robot tool orientation \
+                   		is not rigidly constrained\
+        		zone_ori: degrees, zone size for the tool reorientation\
+\
+buffer_add(pose):\
+	Appends single pose to the remote buffer. Move will execute at current speed (which you can change 	between buffer_add calls)\
+\
+\
+buffer_set(pose_list): \
+	Add every pose in pose_list to the remote buffer.\
+\
+clear_buffer():\
+	Clears remote buffer\
+\
+buffer_len():\
+	Returns the length of the remote buffer.\
+\
+buffer_execute():\
+	Executes linear moves to every pose in the remote buffer.\
+\
+set_external_axis(axis_unscaled):\
+	NOT NEEDED FOR OUR PROJECT. Sets an external axis for the robot.\
+\
+move_circular(pose_onarc, pose_end):\
+	Allows the user to move the tool in a circular arc from the current position, to the peak of the arc at 	\'91pose_onarc\'92, to the end of the arc at \'93pose_end\'92.\
+\
+	pose_onarc (cartesian position) : the position at the peak of an arc.\
+	\
+	pose_end (cartesian position) : the position at the end of an arc.\
+\
+	NOTE: This uses the MoveC RobotWare command. In my experience this command is particular 	finicky. I requires minimum and maximum arc angles for it to run properly. Use at your own risk.\
+\
+set_dio(value, id):\
+	Allows the user to control the robot\'92s digital GPIO inputs.\
+\
+	value (bool) : set IO to True or False\
+	\
+	id (int) : The specific GPIO? This doesn\'92t appear to be used in the abb.py program??? Have to double 	check this if we want to use GPIO pins\
+\
+send(message, wait_for_response=True):\
+	This module sends data from the python program to the PC interface of the robot.\
+	\
+	message (str) : String message containing data for executing commands.\
+	wait_for_response (bool) : (ASSUMED) Whether or not we should wait for a response from the robot.\
+\
+	NOTE: If we want to use Python3, this module will have to be updated.\
+\
+format_pose(pose):\
+	(UNSURE?) My guess is that it converts a cartesian point (pose) into different units if necessary. 	Possibly converts info into string data? Not quite sure.\
+\
+close():\
+	Disconnects user from robot.\
+\
+check_coordinates(coordinates):\
+	confirms that coordinates are of the correct cartesian formatting.}

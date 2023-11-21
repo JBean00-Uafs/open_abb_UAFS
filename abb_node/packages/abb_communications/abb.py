@@ -306,7 +306,9 @@ class Robot:
         '''
         caller = inspect.stack()[1][3]
         log.debug('%-14s sending: %s', caller, message)
-        self.sock.send(message)
+        ##Python3 Error Here. Message is currently a UTF String, needs to be bytes?
+        ##Attempting encoding...
+        self.sock.send(message.encode())
         time.sleep(self.delay)
         if not wait_for_response: return
         data = self.sock.recv(4096)
@@ -325,7 +327,7 @@ class Robot:
         
     def close(self):
         self.send("99 #", False)
-        self.sock.shutdown(socket.SHUT_RDWR)
+        #self.sock.shutdown(socket.SHUT_RDWR)
         self.sock.close()
         log.info('Disconnected from ABB robot.')
 
