@@ -1,10 +1,13 @@
 import abb
 import time
+import datetime
 from pyquaternion import Quaternion
 import math
 import random
 import csv
 import os
+import cv2
+
 
 
 
@@ -19,6 +22,9 @@ class moveableObj:
 
         #Tracks the degree and distance value given by the random number generator [deg, distance]
         self.polarLoc = [0.0,120.0]
+
+        #Refers to the joint positions of the robot at the location of the object
+        self.jointLoc = [0,0,0,0,0,0]
 
         #Bool value that determines if object should have random rotational values
         self.isRot = initIsRot
@@ -37,6 +43,75 @@ class moveableObj:
 
         #Refers to the loose radial bounding box around the centerpoint of the object
         self.radialEdge = radius
+
+
+class DatasetCollector:
+    def __init__(self, total_photos, save_path):
+        self.total_photos = total_photos
+        self.save_path = save_path
+        self.csv_file = os.path.join(save_path, 'dataset.csv')
+        self.photo_count = 0
+        self.cap = cv2.VideoCapture(0)
+
+        # Initialize CSV file
+        with open(self.csv_file, 'w', newline='') as file:
+            writer = csv.writer(file)
+            #add data columns here
+            writer.writerow(["Photo Name", "cyl.X", "cyl.Y", "cyl.Z", "cyl.q1", "cyl.q2", "cyl.q3", "cyl.q4",
+    "cyl.r", "cyl.deg", "cyl.j1", "cyl.j2", "cyl.j3", "cyl.j4", "cyl.j5",
+    "cyl.j6", "cyl.rot", "sqr.X", "sqr.Y", "sqr.Z", "sqr.q1", "sqr.q2",
+    "sqr.q3", "sqr.q4", "sqr.r", "sqr.deg", "sqr.j1", "sqr.j2", "sqr.j3",
+    "sqr.j4", "sqr.j5", "sqr.j6", "sqr.rot"])
+
+    def capture_photo(self):
+        self.photo_count += 1
+        photo_name = self._generate_photo_name()
+        photo_path = os.path.join(self.save_path, photo_name)
+
+
+        ret, frame = self.cap.read()
+        if ret:
+            cv2.imwrite(photo_path, frame)
+
+        return photo_name
+
+    def update_csv(self, photo_name, objectList):
+        row = []
+        row.append(photo_name)
+
+        for moveObj in objectList:
+            row.append(moveObj.cartLoc[0][0])
+            row.append(moveObj.cartLoc[0][1])
+            row.append(moveObj.cartLoc[0][2])
+            row.append(moveObj.cartLoc[1][0])
+            row.append(moveObj.cartLoc[1][1])
+            row.append(moveObj.cartLoc[1][2])
+            row.append(moveObj.cartLoc[1][3])
+
+            row.append(moveObj.polarLoc[0])
+            row.append(moveObj.polarLoc[1])
+
+            row.append(moveObj.jointLoc[0])
+            row.append(moveObj.jointLoc[1])
+            row.append(moveObj.jointLoc[2])
+            row.append(moveObj.jointLoc[3])
+            row.append(moveObj.jointLoc[4])
+            row.append(moveObj.jointLoc[5])
+
+            row.append(moveObj.rot)
+
+        with open(self.csv_file, 'a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(row)
+
+
+
+    def _generate_photo_name(self):
+        date_str = datetime.datetime.now().strftime("%d%m%y")
+        return f"{date_str}_{self.photo_count}_{self.total_photos}.jpg"
+
+    def close_class(self):
+        self.cap.release()
 
 class metricTracker:
     """A Class for stat tracking and time calculation"""
@@ -117,7 +192,10 @@ cylinderStartPos = [[-337.2, 581.91, 100.0], [0.5, 0.0, 0.0, 0.866]]
 squareStartPos = [[-179.9, 308.39, 0], [0.5,0.0,0.0,0.866]]
 
 #Program Parameters
-picCount = 20
+picCount = 10
+
+image_dir = ''
+csv_data_file = ''
 
 #Spacing and Overlap Parameters
 """
@@ -374,6 +452,8 @@ def main():
     #Init Metric Tracker
     metrics = metricTracker()
 
+    collector = DatasetCollector(total_photos=picCount, save_path='C:\\Users\\dowapa\\Desktop\\RobotArm\\TestData\\')
+
     #create mobile objects
     cylinder = moveableObj(cylinderStartPos,False, 0, [tGripper, tGripper_adv], tGripperRange, R.set_Do_Grip, cylinderRadialEdge)
     square = moveableObj(squareStartPos,True, 0, [tVac, tVac_adv], tVacRange, R.set_Do_Vacume, redSquareRadialEdge)
@@ -458,9 +538,10 @@ def main():
             #lower
             R.set_cartesian([[randCartesianCoord[0],randCartesianCoord[1], moveObj.cartLoc[0][2]], newQuant])
 
-            #Update Object Data Values for: cartLoc, polarLoc, rot
+            #Update Object Data Values for: cartLoc, polarLoc, jointLoc, rot
             moveObj.cartLoc = R.get_cartesian()
             moveObj.polarLoc = [randDistance, randAngle]
+            moveObj.jointLoc = R.get_joints()
             moveObj.rot = randRot
 
             #drop
@@ -474,7 +555,8 @@ def main():
         R.set_joints(jOffScreen)
 
         #Record Data
-        collectData()
+        photo_name = collector.capture_photo()
+        collector.update_csv(photo_name, objectList)
 
         #Lap Data Collection
         metrics.end_timer()
@@ -487,6 +569,8 @@ def main():
 
     R.set_joints(jZero)
     R.close()
+    collector.close_class()
+    
 
 
 main()
