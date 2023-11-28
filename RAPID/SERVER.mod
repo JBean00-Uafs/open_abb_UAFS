@@ -5,8 +5,8 @@ MODULE SERVER
 !////////////////
 
 !//Robot configuration
-PERS tooldata currentTool := [TRUE,[[0,0,0],[1,0,0,0]],[0.001,[0,0,0.001],[1,0,0,0],0,0,0]];    
-PERS wobjdata currentWobj := [FALSE,TRUE,"",[[0,0,0],[1,0,0,0]],[[0,0,0],[1,0,0,0]]];   
+PERS tooldata currentTool := [TRUE,[[1.6,-47.2,24.1],[0.5,-0.5,-0.5,-0.5]],[1,[13.941,-25.105,74.149],[1,0,0,0],0,0,0]];    
+PERS wobjdata currentWobj := [FALSE,TRUE,"",[[0,0,0],[1,0,0,0]],[[0,0,0],[1,0,0,0]]];
 PERS speeddata currentSpeed;
 PERS zonedata currentZone;
 
@@ -50,7 +50,10 @@ VAR num ok;
 CONST num SERVER_BAD_MSG :=  0;
 CONST num SERVER_OK := 1;
 
-
+!//Digital IO values
+CONST dionum on := 1;
+CONST dionum off := 0;
+	
 
 	
 !////////////////
@@ -399,6 +402,50 @@ PROC main()
                                         externalAxis];
                     MoveC circPoint, cartesianTarget, currentSpeed, currentZone, currentTool \WObj:=currentWobj ;
                     ok := SERVER_OK;
+                ELSE
+                    ok:=SERVER_BAD_MSG;
+                ENDIF
+            
+            CASE 37: !Sets doGrip to input value
+                IF nParams = 1 THEN
+                    SetDo doGrip, params{1};
+                    ok := SERVER_OK;
+                ELSE
+                    ok:=SERVER_BAD_MSG;
+                ENDIF
+                
+            CASE 38: !Sets doVacume to input value
+                IF nParams = 1 THEN
+                    SetDo doVacume, params{1};
+                    ok := SERVER_OK;
+                ELSE
+                    ok:=SERVER_BAD_MSG;
+                ENDIF
+                                
+            CASE 39: !Sets doTrace to input value
+                IF nParams = 1 THEN
+                    SetDo doTrace, params{1};
+                    ok := SERVER_OK;
+                ELSE
+                    ok:=SERVER_BAD_MSG;
+                ENDIF
+                
+            CASE 41: !Set Advanced Tool
+                IF nParams = 8 THEN
+		   WHILE (frameMutex) DO
+		        WaitTime .01; !// If the frame is being used by logger, wait here
+		   ENDWHILE
+		frameMutex:= TRUE;
+                    currentTool.tload.mass:=params{1};
+                    currentTool.tload.cog.x:=params{2};
+                    currentTool.tload.cog.y:=params{3};
+                    currentTool.tload.cog.z:=params{4};
+                    currentTool.tload.aom.q1:=params{5};
+                    currentTool.tload.aom.q2:=params{6};
+                    currentTool.tload.aom.q3:=params{7};
+                    currentTool.tload.aom.q4:=params{8};
+                    ok := SERVER_OK;
+		    frameMutex:= FALSE;
                 ELSE
                     ok:=SERVER_BAD_MSG;
                 ENDIF
