@@ -422,9 +422,18 @@ PROC main()
                     ok:=SERVER_BAD_MSG;
                 ENDIF
                                 
-            CASE 39: !Sets doTrace to input value
-                IF nParams = 1 THEN
-                    SetDo doTrace, params{1};
+            CASE 39: !Returns the cartesian position given the joint position
+                IF nParams = 6 THEN
+		    
+		    jointsTarget:=[[params{1},params{2},params{3},params{4},params{5},params{6}], externalAxis];
+                    cartesianPose := CalcRobT(jointsTarget, currentTool \WObj:=currentWObj);		
+                    addString := NumToStr(cartesianPose.trans.x,2) + " ";
+                    addString := addString + NumToStr(cartesianPose.trans.y,2) + " ";
+                    addString := addString + NumToStr(cartesianPose.trans.z,2) + " ";
+                    addString := addString + NumToStr(cartesianPose.rot.q1,3) + " ";
+                    addString := addString + NumToStr(cartesianPose.rot.q2,3) + " ";
+                    addString := addString + NumToStr(cartesianPose.rot.q3,3) + " ";
+                    addString := addString + NumToStr(cartesianPose.rot.q4,3);
                     ok := SERVER_OK;
                 ELSE
                     ok:=SERVER_BAD_MSG;

@@ -341,6 +341,13 @@ class Robot:
         msg = '97 ' + str(int(bool(value))) + ' #'
         return 
         #return self.send(msg)
+
+    def get_cart_pose(joints = [0,0,0,0,0,0]):
+        if len(joints) != 6: return False
+        msg = "39 "
+        for joint in joints: msg += format(joint*self.scale_angle, "+08.2f") + " " 
+        msg += "#" 
+        return self.send(msg)
         
     def send(self, message, wait_for_response=True):
         '''
