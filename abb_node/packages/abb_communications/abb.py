@@ -34,6 +34,7 @@ class Robot:
         
         self.set_units('millimeters', 'degrees')
         self.set_tool()
+        self.set_tool_advanced()
         self.set_workobject()
         self.set_speed()
         self.set_zone()
@@ -137,9 +138,47 @@ class Robot:
         Offsets are from tool0, which is defined at the intersection of the
         tool flange center axis and the flange face.
         '''
-        msg       = "06 " + self.format_pose(tool)    
+        msg       = "06 " + self.format_pose(tool)
+
         self.send(msg)
         self.tool = tool
+
+    def set_tool_advanced(self, tool=[0.001, [[0,0,0.001], [1,0,0,0]]]):
+        msg = "41 "
+        msg += format(tool[0], "+08.3f") + " "
+        for pos in tool[1][0]: msg += format(pos, "+08.3f") + " "
+        for quat in tool[1][1]: msg += format(quat, "+08.4f") + " "
+        msg += "#"
+
+        self.send(msg)
+        self.tool_adv = tool
+
+    def set_Do_Grip(self, value):
+        '''
+        Sets the Digital Output doTrace to the input value
+        '''
+
+        msg = "37 " + str(int(bool(value))) + ' #'
+
+        return self.send(msg)
+
+    def set_Do_Vacume(self, value):
+        '''
+        Sets the Digital Output doTrace to the input value
+        '''
+
+        msg = "38 " + str(int(bool(value))) + ' #'
+
+        return self.send(msg)
+
+    def set_Do_Trace(self, value):
+        '''
+        Sets the Digital Output doTrace to the input value
+        '''
+
+        msg = "39 " + str(int(bool(value))) + ' #'
+
+        return self.send(msg)
 
     def load_json_tool(self, file_obj):
         if file_obj.__class__.__name__ == 'str':
@@ -150,6 +189,10 @@ class Robot:
     def get_tool(self): 
         log.debug('get_tool returning: %s', str(self.tool))
         return self.tool
+
+    def get_tool_advanced(self):
+        log.debug('get_tool_advanced returning: %s', str(self.tool_adv))
+        return self.tool_adv
 
     def set_workobject(self, work_obj=[[0,0,0],[1,0,0,0]]):
         '''
@@ -319,7 +362,7 @@ class Robot:
         pose = check_coordinates(pose)
         msg  = ''
         for cartesian in pose[0]:
-            msg += format(cartesian * self.scale_linear,  "+08.1f") + " " 
+            msg += format(cartesian * self.scale_linear,  "+08.1f") + " "
         for quaternion in pose[1]:
             msg += format(quaternion, "+08.5f") + " " 
         msg += "#" 
